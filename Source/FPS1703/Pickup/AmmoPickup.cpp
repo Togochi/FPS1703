@@ -14,8 +14,9 @@ bool AAmmoPickup::GivePickupTo(AFPS1703Character* TargetCharacter)
 	if (Character->HealthComponent->IsDead() || !Character->HealthComponent)
 		return false;
  
+	Ammo_Amount = FMath::RandRange(3, 20);
 	Character->Current_Weapon->Add_Ammo(Ammo_Amount);
-	PickupWasTaken();
+	Pickup_Was_Taken();
 	return true;
 }
 //-------------------------------------------------------------------------------------------------------

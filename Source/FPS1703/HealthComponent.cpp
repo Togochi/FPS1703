@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Camera/CameraShakeBase.h"
+#include "Perception/AISense_Damage.h"
 //-------------------------------------------------------------------------------------------------------
 UHealthComponent::UHealthComponent()
 {
@@ -42,6 +43,18 @@ void UHealthComponent::Set_Health(float new_health)
 	OnHealthChanged.Broadcast(Health, health_delta);
 }
 //-------------------------------------------------------------------------------------------------------
+void UHealthComponent::ReportDamageEvent(float Damage, AController* InstigatedBy)
+{
+	if (!InstigatedBy || !InstigatedBy->GetPawn() || !GetOwner()) return;
+
+	UAISense_Damage::ReportDamageEvent( GetWorld(), 
+													GetOwner(), 
+													InstigatedBy->GetPawn(), 
+													Damage, 
+													InstigatedBy->GetPawn()->GetActorLocation(),
+													GetOwner()->GetActorLocation() );
+}
+//-------------------------------------------------------------------------------------------------------
 void UHealthComponent::Play_CameraShake()
 {
 	if (IsDead()) return;
@@ -72,6 +85,7 @@ void UHealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, const
 	}
 
 	Play_CameraShake();
+	ReportDamageEvent(Damage, InstigatedBy);
 }
 //-------------------------------------------------------------------------------------------------------
 

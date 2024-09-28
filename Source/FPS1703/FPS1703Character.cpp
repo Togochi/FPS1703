@@ -1,9 +1,7 @@
 #include "FPS1703Character.h"
-#include "FPS1703Projectile.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/TextRenderComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -14,6 +12,8 @@
 #include "Engine/DamageEvents.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "Sound/SoundCue.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 //--------------------------------------------------------------------------------------------------------------
@@ -44,8 +44,6 @@ AFPS1703Character::AFPS1703Character()
 void AFPS1703Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	
 }
 //--------------------------------------------------------------------------------------------------------------
 USkeletalMeshComponent* AFPS1703Character::GetMesh1P() const
@@ -93,6 +91,8 @@ void AFPS1703Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(Fire_Action_Start, ETriggerEvent::Triggered, this, &AFPS1703Character::On_Fire_Action_Start);
 		EnhancedInputComponent->BindAction(Fire_Action_End, ETriggerEvent::Triggered, this, &AFPS1703Character::On_Fire_Action_End);
 		EnhancedInputComponent->BindAction(Use_Action, ETriggerEvent::Triggered, this, &AFPS1703Character::On_Use_Action);
+		EnhancedInputComponent->BindAction(Zoom_Action_On, ETriggerEvent::Triggered, this, &AFPS1703Character::On_Zoom_Action_On);
+		EnhancedInputComponent->BindAction(Zoom_Action_Off, ETriggerEvent::Triggered, this, &AFPS1703Character::On_Zoom_Action_Off);
 	}
 	else
 	{
@@ -160,10 +160,38 @@ void AFPS1703Character::On_Use_Action(const FInputActionValue& Value)
 	}
 }
 //--------------------------------------------------------------------------------------------------------------
+void AFPS1703Character::On_Zoom_Action_On(const FInputActionValue& Value)
+{
+	if (Current_Weapon != 0)
+	{
+		if (APlayerController* player_controller = Cast<APlayerController>(Controller))
+		{
+			player_controller->PlayerCameraManager->SetFOV(FOV_Zoom_Angle);
+		}
+	}
+}
+//--------------------------------------------------------------------------------------------------------------
+void AFPS1703Character::On_Zoom_Action_Off(const FInputActionValue& Value)
+{
+	if (Current_Weapon != 0)
+	{
+		if (APlayerController* player_controller = Cast<APlayerController>(Controller))
+		{
+			player_controller->PlayerCameraManager->SetFOV(90.0f);
+		}
+	}
+}
+//--------------------------------------------------------------------------------------------------------------
 void AFPS1703Character::On_Fire_Action_Start(const FInputActionValue& Value)
 {
 	if (Current_Weapon != 0)
-		Current_Weapon->Fire_Start();
+	{
+	   Current_Weapon->Fire_Start();
+		if (!Current_Weapon->Is_Ammo_Empty()) 
+		{
+			On_Fire_Changes();
+		}
+	}
 }
 //--------------------------------------------------------------------------------------------------------------
 void AFPS1703Character::On_Fire_Action_End(const FInputActionValue& Value)
@@ -175,17 +203,24 @@ void AFPS1703Character::On_Fire_Action_End(const FInputActionValue& Value)
 void AFPS1703Character::OnDeath()
 {
 	UE_LOG(LogTemplateCharacter, Display, TEXT("Player %s is Dead!"), *GetName());
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), Death_Sound, GetActorLocation());
+	UGameplayStatics::PushSoundMixModifier(GetWorld(), Fade_Out_Sound_Mix);
 	GetCharacterMovement()->DisableMovement();
-	SetLifeSpan(1.0f);
-	if (Controller)
-	{
-		Controller->ChangeState(NAME_Spectating);
-	}
+	Destroy();
+
+	//const FName menu_level_name = "MainMenu_Level";
+	//UGameplayStatics::OpenLevel(this, menu_level_name);
+}
+//--------------------------------------------------------------------------------------------------------------
+void AFPS1703Character::Set_Energy(int32 energy_amount)
+{
+	Current_Energy = Current_Energy + energy_amount;
 }
 //--------------------------------------------------------------------------------------------------------------
 void AFPS1703Character::OnGroundLanded(const FHitResult& Hit)
 {
 	const auto FallVelocityZ = -GetVelocity().Z;
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), Jump_Sound, GetActorLocation());
 	UE_LOG(LogTemplateCharacter, Display, TEXT("Fall velocity Z: %f"), FallVelocityZ);
 
 	if (FallVelocityZ < LandedDamageVelocity.X) return;

@@ -23,7 +23,7 @@ void ABasePickup::BeginPlay()
 	Generate_Rotation_Yaw();
 }
 //-------------------------------------------------------------------------------------------------------
-void ABasePickup::PickupWasTaken()
+void ABasePickup::Pickup_Was_Taken()
 {
 	Collision_Component->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 

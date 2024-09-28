@@ -19,7 +19,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	void PickupWasTaken();
+	void Pickup_Was_Taken();
 
 	AFPS1703Character* Character;
 

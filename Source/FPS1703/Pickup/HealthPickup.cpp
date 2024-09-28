@@ -13,8 +13,9 @@ bool AHealthPickup::GivePickupTo(AFPS1703Character* TargetCharacter)
 	if (Character->HealthComponent->Health == Character->HealthComponent->Max_Health)
 		return false;
 
+	Health_Amount = FMath::RandRange(5, 20);
 	Character->HealthComponent->Set_Health(Character->HealthComponent->Health + Health_Amount);
-	PickupWasTaken();
+	Pickup_Was_Taken();
 	return true;
 }
 //-------------------------------------------------------------------------------------------------------
